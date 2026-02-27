@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PsychoAI | Профиль личности</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { 
+            /* Dark Theme (Default) */
+            --color-accent: #21b6cc;
+            --color-accent-hover: #199bb0;
+            --color-bg-body: #191b1a;
+            --color-bg-card: #191b1a;
+            --color-bg-welcome-start: #191b1a;
+            --color-bg-welcome-end: #191b1a;
+            --color-text-main: #FFFFFF;
+            --color-text-secondary: #CCCCCC;
+            --color-text-muted: #777777;
+            --color-border: #333333;
+            --color-input-bg: #252827;
+            --color-bubble-bg: #252827;
+            --color-bubble-text: #EEEEEE;
+            --color-accent-light: rgba(33, 182, 204, 0.15);
+            --color-chat-user: #21b6cc;
+            --color-chat-model-bg: #252827;
+            --circle-border: #21b6cc;
+        }
+        
+        .theme-light {
+            /* Light Theme */
+            --color-accent: #1DB899;
+            --color-accent-hover: #15A085;
+            --color-bg-body: #FAFAFA;
+            --color-bg-card: #FFFFFF;
+            --color-bg-welcome-start: #FDFBF7;
+            --color-bg-welcome-end: #FFFFFF;
+            --color-text-main: #000000;
+            --color-text-secondary: #333333;
+            --color-text-muted: #999999;
+            --color-border: #E8E8E8;
+            --color-input-bg: #F5F5F5;
+            --color-bubble-bg: #FFFFFF;
+            --color-bubble-text: #2C3E50;
+            --color-accent-light: #EEFBF4;
+            --color-chat-user: #10A37F;
+            --color-chat-model-bg: #FFFFFF;
+            --circle-border: #1DB899; /* Compat */
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            scrollbar-width: none;
+            margin: 0;
+            padding: 0;
+        }
+        *::-webkit-scrollbar { display: none; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--color-bg-body);
+            color: var(--color-text-main);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        .safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Bubble Styles */
+        .bubble-question {
+            background-color: var(--color-bubble-bg);
+            border: 2px solid var(--color-accent);
+            border-radius: 16px;
+            padding: 0 16px;
+            width: 100%;
+            max-width: 300px;
+            height: 84px; /* Фиксированная высота */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+            text-align: center;
+        }
+
+        .bubble-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--color-bubble-text);
+            line-height: 1.4;
+            font-weight: 500;
+            margin: 0;
+            width: 100%;
+        }
+
+        /* Хвост верхнего облачка: между 1 и 2 кружком (примерно 22% ширины от левого края) */
+        .bubble-arrow-down::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 22%; 
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid var(--color-accent);
+        }
+
+        /* Хвост нижнего облачка: между 4 и 5 кружком (примерно 78% ширины от левого края) */
+        .bubble-arrow-up::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 78%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid var(--color-accent);
+        }
+
+        /* Scale Circles */
+        .scale-circle {
+            border: 3px solid var(--color-accent);
+            background: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        /* Выбранный кружок заливается зеленым */
+        .scale-circle.selected {
+            background-color: var(--color-accent);
+            opacity: 1 !important;
+        }
+        
+        /* Пульсация включается отдельным классом через JS */
+        .scale-circle.pulsing {
+            animation: pulse-once 0.4s ease-in-out forwards;
+        }
+
+        .scale-circle.faded {
+            opacity: 0.3;
+        }
+
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Animations */
+        @keyframes vibrate {
+           0%, 100% { transform: translate(0, 0) rotate(0deg); }
+           25% { transform: translate(-1px, 1px) rotate(-0.5deg); }
+           50% { transform: translate(1px, -1px) rotate(0.5deg); }
+           75% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+        }
+
+        @keyframes shatter-shard {
+            0% { transform: translate3d(0,0,0) rotate(0) scale(1); opacity: 1; }
+            100% { transform: translate3d(var(--tx), var(--ty), 0) rotate(var(--rot)) scale(0.9); opacity: 0; }
+        }
+
+        .result-title {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 32px;
+            color: var(--color-text-main);
+        }
+
+        .question-exit {
+            animation: dissolve-out 0.3s forwards ease-in;
+        }
+        .question-enter {
+            animation: dissolve-in 0.3s forwards ease-out;
+        }
+
+        @keyframes dissolve-out {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+        @keyframes dissolve-in {
+            from { opacity: 0; transform: scale(1.05); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #root { height: 100vh; width: 100vw; display: flex; flex-direction: column; }
+
+        /* ========================================= */
+        /* MODERN AESTHETIC CHAT STYLES             */
+        /* ========================================= */
+        
+        .markdown-chat {
+            font-size: 15px;
+            line-height: 1.6;
+            color: inherit;
+        }
+
+        /* Remove default margins from first/last elements */
+        .markdown-chat > *:first-child { margin-top: 0 !important; }
+        .markdown-chat > *:last-child { margin-bottom: 0 !important; }
+
+        /* Paragraphs */
+        .markdown-chat p {
+            margin-bottom: 12px;
+        }
+        .markdown-chat p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Modern Headers */
+        /* Using h3 as the standard section header for compactness */
+        .markdown-chat h1, 
+        .markdown-chat h2, 
+        .markdown-chat h3 {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-accent); /* Brand color for headers */
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Lists */
+        .markdown-chat ul, 
+        .markdown-chat ol {
+            margin-bottom: 12px;
+            padding-left: 20px;
+        }
+
+        .markdown-chat li {
+            margin-bottom: 4px;
+        }
+
+        /* Stylized bullets */
+        .markdown-chat li::marker {
+            color: var(--color-accent);
+            font-size: 1.1em;
+        }
+
+        .markdown-chat blockquote {
+            border-left: 3px solid var(--color-accent);
+            background: var(--color-accent-light);
+            padding: 8px 12px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-style: italic;
+            color: var(--color-text-secondary);
+        }
+
+        .markdown-chat strong {
+            font-weight: 700;
+            color: inherit;
+        }
+
+        .markdown-chat a {
+            color: var(--color-accent);
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .markdown-chat a:hover {
+            border-bottom-color: var(--color-accent);
+        }
+        
+        /* Subtle Divider */
+        .markdown-chat hr {
+            border: none;
+            height: 1px;
+            background: var(--color-border);
+            margin: 24px 0;
+            opacity: 0.6;
+        }
+
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+</body>
+</html>

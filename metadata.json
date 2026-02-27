@@ -1,0 +1,7 @@
+{
+  "name": "v.1.20 MBTI",
+  "description": "An aesthetic, mobile-first personality assessment tool based on MBTI-style logic with 32 questions and custom scoring formulas.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
